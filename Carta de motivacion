@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Herramienta para Cartas de Motivación</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #333;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+        }
+        .corrections {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Herramienta para Cartas de Motivación</h1>
+
+    <div class="section">
+        <h2>Introducción</h2>
+        <p>Escriba una breve introducción que explique quién es usted y por qué está escribiendo la carta.</p>
+        <textarea id="intro"></textarea>
+    </div>
+
+    <div class="section">
+        <h2>Cuerpo de la Carta</h2>
+        <p>Describa su experiencia, habilidades y motivación para postularse a la universidad o puesto de trabajo.</p>
+        <textarea id="body"></textarea>
+    </div>
+
+    <div class="section">
+        <h2>Conclusión</h2>
+        <p>Concluya su carta agradeciendo al lector por su tiempo y expresando su interés en una posible entrevista.</p>
+        <textarea id="conclusion"></textarea>
+    </div>
+
+    <button class="btn" id="checkBtn">Verificar Gramática y Ortografía</button>
+
+    <div id="corrections" class="section"></div>
+
+    <script>
+        document.getElementById('checkBtn').addEventListener('click', async function() {
+            const intro = document.getElementById('intro').value;
+            const body = document.getElementById('body').value;
+            const conclusion = document.getElementById('conclusion').value;
+            
+            const text = `${intro}\n${body}\n${conclusion}`;
+            const correctionsDiv = document.getElementById('corrections');
+            
+            correctionsDiv.innerHTML = '<p>Verificando...</p>';
+
+            try {
+                const response = await fetch('https://api.languagetool.org/v2/check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'text': text,
+                        'language': 'de-DE',
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Error en la solicitud a la API');
+
+                const result = await response.json();
+
+                correctionsDiv.innerHTML = '<h2>Correcciones</h2>';
+                
+                if (result.matches.length === 0) {
+                    correctionsDiv.innerHTML += '<p>No se encontraron errores.</p>';
+                } else {
+                    result.matches.forEach(error => {
+                        correctionsDiv.innerHTML += `<p class="corrections">Error: ${error.message} <br> Sugerencia: ${error.replacements.map(r => r.value).join(', ')}</p>`;
+                    });
+                }
+            } catch (error) {
+                correctionsDiv.innerHTML = `<p>Error al verificar el texto: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
